@@ -210,6 +210,8 @@ annotate service.Allocations with {
         Common.ValueList                : {
             $Type          : 'Common.ValueListType',
             CollectionPath : 'Functions',
+            SelectionVariantQualifier: 'variant1',
+            SearchSupported: false,
             Parameters     : [
                 {
                     $Type             : 'Common.ValueListParameterIn',

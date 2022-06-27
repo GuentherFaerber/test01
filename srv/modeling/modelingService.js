@@ -3,6 +3,10 @@ const activationService = require("./activationService");
 const functionService = require("./functionService");
 
 module.exports = function () {
+  // require the general nexontis-annotations handling module. In this module we define
+  // general event handlers
+  require('./nexontis-annotations').call(this);
+
   this.on("activate", async (req) => {
     await activationService.activate(req);
   });

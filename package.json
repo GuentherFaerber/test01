@@ -26,7 +26,8 @@
     "watch-allocations": "cds watch --open allocations/webapp/index.html?sap-ui-xx-viewCache=false#fe-lrop-v4",
     "watch-functions": "cds watch --open functions/webapp/index.html?sap-ui-xx-viewCache=false#fe-lrop-v4",
     "watch-modeltables": "cds watch --open modeltables/webapp/index.html?sap-ui-xx-viewCache=false#fe-lrop-v4",
-    "watch-calculationunits": "cds watch --open calculationunits/webapp/index.html?sap-ui-xx-viewCache=false#fe-lrop-v4"
+    "watch-calculationunits": "cds watch --open calculationunits/webapp/index.html?sap-ui-xx-viewCache=false#fe-lrop-v4",
+    "debug": "run(){ node --inspect ./node_modules/@sap/cds/bin/cds.js serve all --with-mocks --in-memory?; }; run"
   },
   "eslintConfig": {
     "extends": "eslint:recommended",

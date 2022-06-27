@@ -64,7 +64,16 @@ entity Allocations : managed, function {
         termYear                : TermYear;
         termMinimum             : TermMinimum;
         termMaximum             : TermMaximum;
-        senderFunction          : Association to one Functions                      @title       : 'Sender Input';
+        senderFunction          : Association to one Functions                      @title       : 'Sender Input' 
+                                    @Nexontis.assert.recursion : false
+                                    @(Nexontis.assert.checkAssocValues : {
+                                      association   : 'type',
+                                      field         : 'code',
+                                      allowedValues : [
+                                          'MT',
+                                          'AL'
+                                      ]
+                                    });
         senderViews             : Composition of many AllocationSenderViews
                                       on senderViews.allocation = $self             @title       : 'Sender View';
         receiverFunction        : Association to one AllocationInputFunctions       @title       : 'Receiver Input';
