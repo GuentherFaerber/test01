@@ -31,13 +31,11 @@ entity ModelTables : managed, function {
 
 entity ModelTableFields : managed, field {
     key ID         : GUID;
-        modelTable : Association to one ModelTables @mandatory;
-        sequence   : Sequence default 10;
+        modelTable : Association to one ModelTables;
 }
 
 type ModelTableType @(assert.range) : String(10) enum {
     Environment = 'ENV';
-    DataLake    = 'ENVDL';
     HANA        = 'HANA';
     OData       = 'ODATA';
 }

@@ -47,16 +47,8 @@ entity Functions : managed, environment {
         sequence              : Sequence default 10;
         parent                : Association to one FunctionParents                @title       : 'Parent';
         type                  : Association to one FunctionTypes                  @title       : 'Type';
-        processingType        : Association to one FunctionProcessingTypes        @title       : 'Processing Type';
-        businessEventType     : Association to one FunctionBusinessEventTypes     @title       : 'Business Event Type';
-        partition             : Association to one Partitions                     @title       : 'Partition';
-        parentCalculationUnit : Association to one FunctionParentCalculationUnits @title       : 'Parent Calculation Unit';
         description           : Description;
         documentation         : Documentation;
-        // allocation            : Association to one Allocations;
-        // calculationUnit       : Association to one CalculationUnits;
-        //  Description           : Association to one Descriptions;
-        // modelTable            : Association to one ModelTables;
         virtual url           : String;
         virtual isUrlHidden   : Boolean;
 }

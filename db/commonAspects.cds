@@ -15,13 +15,25 @@ using {
   Groups,
   Orders,
   Signs,
-  Options
+  Options,
+  IncludeInputData,
+  IncludeInitialResult,
+  ResultHandlings,
 } from './commonTypes';
 
+using {
+  ResultFunctions,
+  InputFields
+} from './commonEntities';
 using {Environments} from './environments';
-using {Functions} from './functions';
+using {
+  Functions,
+  FunctionProcessingTypes,
+  FunctionBusinessEventTypes
+} from './functions';
 using {Fields} from './fields';
 using {Checks} from './checks';
+using {Partitions} from './partitions';
 
 // aspect myCodeList @(
 //   cds.autoexpose,
@@ -35,19 +47,41 @@ using {Checks} from './checks';
 
 // @cds.persistence.journal // Enable schema evolution for all environment configuration tables
 aspect environment : {
-  environment : Association to one Environments @title : 'Environment' @mandatory;
+  environment : Association to one Environments @title : 'Environment'  @mandatory;
 }
 
-aspect function : environment{
-  function : Association to one Functions @title : 'Function' @mandatory;
+aspect function : environment {
+  function : Association to one Functions @title : 'Function'  @mandatory;
 }
 
-aspect field : environment{
+aspect field : environment {
   field : Association to one Fields @mandatory;
 }
 
-aspect check : environment{
+aspect check : environment {
   check : Association to one Checks @mandatory;
+}
+
+aspect functionExecutable : function {
+  includeInputData     : IncludeInputData default false;
+  resultHandling       : Association to one ResultHandlings            @title : 'Result Handling';
+  includeInitialResult : IncludeInitialResult default false;
+  resultFunction       : Association to one ResultFunctions            @title : 'Result Model Table';
+  processingType       : Association to one FunctionProcessingTypes    @title : 'Processing Type';
+  businessEventType    : Association to one FunctionBusinessEventTypes @title : 'Business Event Type';
+  partition            : Association to one Partitions                 @title : 'Partition';
+  inputFunction        : Association to one Functions                  @title : 'Sender Input';
+  inputFields          : Composition of many InputFields
+                           on inputFields.function.ID = function.ID       @title : 'Sender Fields';
+}
+
+aspect signatureSA : field {
+  selection : Boolean @title : 'Selection Field';
+  action    : Boolean @title : 'Action Field';
+}
+
+aspect signatureGSA : signatureSA {
+  granularity : Boolean @title : 'Granularity Field';
 }
 
 aspect formula {

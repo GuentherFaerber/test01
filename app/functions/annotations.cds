@@ -25,16 +25,6 @@ annotate service.Functions with @(UI.LineItem : [
         Value : type_code,
     },
     {
-        $Type : 'UI.DataField',
-        Label : 'processingType_code',
-        Value : processingType_code,
-    },
-    {
-        $Type : 'UI.DataField',
-        Label : 'businessEventType_code',
-        Value : businessEventType_code,
-    },
-    {
         $Type  : 'UI.DataFieldForAction',
         Action : 'ModelingService.activate',
         Label  : 'Activate',
@@ -57,16 +47,6 @@ annotate service.Functions with @(
                 $Type : 'UI.DataField',
                 Label : 'type_code',
                 Value : type_code,
-            },
-            {
-                $Type : 'UI.DataField',
-                Label : 'processingType_code',
-                Value : processingType_code,
-            },
-            {
-                $Type : 'UI.DataField',
-                Label : 'businessEventType_code',
-                Value : businessEventType_code,
             },
             {
                 $Type : 'UI.DataField',

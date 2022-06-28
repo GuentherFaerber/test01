@@ -23,6 +23,7 @@ using {
 } from './commonTypes';
 using {
     function,
+    functionExecutable,
     field,
     formulaOrder,
     selection,
@@ -34,24 +35,15 @@ using {
 } from './functions';
 using {
     Fields,
-    FieldType
+    FieldType,
+    FieldClass,
 } from './fields';
 using {Checks} from './checks';
 
-using {
-    EnvironmentFunctions,
-    EnvironmentFields,
-    EnvironmentChecks,
-    EnvironmentPartitions
-} from './commonEntities';
-
-entity Allocations : managed, function {
+entity Allocations : managed, functionExecutable {
     key ID                      : GUID                                              @Common.Text : function.description  @Common.TextArrangement : #TextOnly;
         type                    : Association to one AllocationTypes                @title       : 'Type';
         valueAdjustment         : Association to one AllocationValueAdjustments     @title       : 'Value Adjustment';
-        includeInputData        : IncludeInputData default false;
-        resultHandling          : Association to one ResultHandlings                @title       : 'Result Handling';
-        includeInitialResult    : IncludeInitialResult default false;
         cycleFlag               : CycleFlag default false;
         cycleMaximum            : CycleMaximum default '';
         cycleIterationField     : Association to one AllocationCycleIterationFields @title       : 'Cycle Iteration Field';
@@ -64,22 +56,9 @@ entity Allocations : managed, function {
         termYear                : TermYear;
         termMinimum             : TermMinimum;
         termMaximum             : TermMaximum;
-        senderFunction          : Association to one Functions                      @title       : 'Sender Input' 
-                                    @Nexontis.assert.recursion : false
-                                    @(Nexontis.assert.checkAssocValues : {
-                                      association   : 'type',
-                                      field         : 'code',
-                                      allowedValues : [
-                                          'MT',
-                                          'AL'
-                                      ]
-                                    });
-        senderViews             : Composition of many AllocationSenderViews
-                                      on senderViews.allocation = $self             @title       : 'Sender View';
-        receiverFunction        : Association to one AllocationInputFunctions       @title       : 'Receiver Input';
+        receiverFunction        : Association to one Functions       @title       : 'Receiver Input';
         receiverViews           : Composition of many AllocationReceiverViews
                                       on receiverViews.allocation = $self           @title       : 'Receiver View';
-        resultFunction          : Association to one AllocationResultFunctions      @title       : 'Result Model Table';
         earlyExitCheck          : Association to one AllocationEarlyExitChecks      @title       : 'Early Exit Check';
         selectionFields         : Composition of many AllocationSelectionFields
                                       on selectionFields.allocation = $self;
@@ -99,25 +78,29 @@ entity Allocations : managed, function {
                                       on checks.allocation = $self;
 }
 
-@cds.autoexpose
-@cds.odata.valuelist
-entity AllocationInputFunctions         as projection on Functions as F where(
-    type.code in (
-        'MT', 'AL')
-    );
-
-entity AllocationSenderViews : managed, function, formulaOrder {
-    key ID         : GUID;
-        allocation : Association to one Allocations;
-        field      : Association to one Fields @title : 'Field';
-        selections : Composition of many AllocationSenderViewSelections
-                         on selections.field = $self;
-}
-
-entity AllocationSenderViewSelections : managed, function, selection {
-    key ID    : GUID;
-        field : Association to one AllocationSenderViews;
-}
+// Example: Reduced set of fields for OffsetAllocation would make sense, if the UI and the Service API
+// separates the different kinds of allocations => then no changes between kinds are possible
+// like in expert UI
+entity OffsetAllocation                 as projection on Allocations {
+    environment,
+    function,
+    ID,
+    type,
+    valueAdjustment,
+    includeInputData,
+    resultHandling,
+    includeInitialResult,
+    inputFunction,
+    inputFields,
+    receiverFunction,
+    receiverViews,
+    resultFunction,
+    //signatureFields
+    rules,
+    offsets,
+    debitCredits,
+    checks
+};
 
 entity AllocationReceiverViews : managed, function, formulaOrder {
     key ID         : GUID;
@@ -131,9 +114,6 @@ entity AllocationReceiverViewSelections : managed, function, selection {
     key ID    : GUID;
         field : Association to one AllocationReceiverViews;
 }
-
-@cds.odata.valuelist
-entity AllocationResultFunctions        as projection on Functions where type.code = 'MT';
 
 entity AllocationOffsets : managed, function {
     key ID          : GUID;
