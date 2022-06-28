@@ -36,7 +36,9 @@ It should be possible to restrict the values of the value help with some indiviu
 In general it should be possible to achieve this with a selection variant that is applied to the 
 value help dialog.
 
-This currently does not work (see this [SAP community question](https://answers.sap.com/questions/13666191/selectionvariant-to-filter-valuelist-in-fiori-elem.html) 
+##### Evaluated standard solution
+
+This (currently) does not work (see this [SAP community question](https://answers.sap.com/questions/13666191/selectionvariant-to-filter-valuelist-in-fiori-elem.html) 
 for details.
 
 In addition to the mentioned question it needs to be evaluated if and how it is possible to adjust the selection variant by means of declaration in the ValueList annotation.
@@ -46,6 +48,46 @@ The idea is to do this e.g. as follows:
 <PropertyValue Property="SelectionVariantQualifier" String="variant1" SelectionRangeType="Function eq MT1" />
 ```
 Cause this is not forseen in the respective OData vocabulary the solution would probably be to define a selection variant for each indiviual filter.
+
+##### Realized Nexontis solution
+
+The requirement is realized by means of **virtual properties**, **annotations**, **CXN** and indiviual event handlers.
+
+###### Virtual properties 
+
+The entities that are involved in the value help process need to have a (virtual) property **valueHelpDummy**. This can be added to such entities 
+by using the aspect **nxValuehelp**.  
+This aspect needs to be added to the value help entity as well as to the using entity (the entity that defines the property for which the value help should
+be used).
+
+The aspect is defined in `commonAspects.cds`.
+
+```
+aspect nxValuehelp: {
+  virtual valueHelpDummy : String;
+}
+```
+
+###### Annotations 
+
+The property that should display the value help and that already has the ValueList annotation additionally needs the annotaion **NX.valuehelp**.
+This annotation defines the additional query clauses like shown in the example below.
+
+You can use field of the valuehelp entity that is defined in the collectionPath of the ValueList annotation to add additional filters.
+The values can be statich ones or those of the properties of the using entity. The latter are defines with the syntax **$self.<any fieldname of the using entiy>**.
+Those references are resolved at runtime.
+
+```
+NX.valuehelp : ![(type.code = 'MT' or type.code = 'AL') and environment_ID = $self.environment_ID]
+```
+
+###### CXN
+
+The filter expression for the additional filters are defined with [CXN](https://cap.cloud.sap/docs/cds/cxn).
+
+###### Generic event handlers
+
+The generic event handlers don't have to be implemented by the application developer. If you are interested in the implementation details have a look in `nexontis-annotations.js`.
 
 #### Declarative Validation 
 
