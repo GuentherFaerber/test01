@@ -20,6 +20,7 @@ using {
     environment,
     field,
     function,
+    nxValuehelp
 } from './commonAspects';
 using {Fields} from './fields';
 using {Checks} from './checks';
@@ -41,7 +42,7 @@ using {ModelTables} from './modelTables';
 }
 @cds.odata.valuelist
 @UI.Identification : [{Value : function}]
-entity Functions : managed, environment {
+entity Functions : managed, environment, nxValuehelp {
     key ID                    : GUID                                              @Common.Text : description  @Common.TextArrangement : #TextOnly;
         function              : Function;
         sequence              : Sequence default 10;

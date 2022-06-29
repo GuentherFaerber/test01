@@ -62,7 +62,7 @@ aspect check : environment {
   check : Association to one Checks @mandatory;
 }
 
-aspect functionExecutable : function {
+aspect functionExecutable : function, nxValuehelp {
   includeInputData     : IncludeInputData default false;
   resultHandling       : Association to one ResultHandlings            @title : 'Result Handling';
   includeInitialResult : IncludeInitialResult default false;
@@ -70,12 +70,21 @@ aspect functionExecutable : function {
   processingType       : Association to one FunctionProcessingTypes    @title : 'Processing Type';
   businessEventType    : Association to one FunctionBusinessEventTypes @title : 'Business Event Type';
   partition            : Association to one Partitions                 @title : 'Partition';
-  inputFunction        : Association to one Functions                  @title : 'Sender Input';
-  inputFields          : Composition of many InputFields
-                           on inputFields.function.ID = function.ID       @title : 'Sender Fields';
-}
+  inputFunction        : Association to one Functions                  @title : 'Sender Input'
+                           @NX.assert.recursion : false
+                           @(NX.assert.checkAssocValues : {
+                             association   : 'type',
+                             field         : 'code',
+                             allowedValues : [
+                               'MT',
+                               'AL'
+                             ]
+                           });
+    inputFields          : Composition of many InputFields
+                             on inputFields.function.ID = function.ID       @title : 'Sender Fields';
+  }
 
-aspect signatureSA : field {
+  aspect signatureSA : field {
   selection : Boolean @title : 'Selection Field';
   action    : Boolean @title : 'Action Field';
 }
@@ -106,4 +115,14 @@ aspect selection : {
   opt  : Association to one Options @title : 'Option'  @mandatory;
   low  : String                     @title : 'Value';
   high : String                     @title : 'High Value';
+}
+
+/**
+ * entities which define nexontis valuehelp need to use this aspect. The field in this aspect
+ * transports the data of the declaratively defined valuehelp from the using entity to the valuehelp 
+ * entity defined via the collectionpath in the valuelist annotation
+ * TODO: currently it can only be used with 1 property in an entity. Has to be more generic and universal 
+ */
+aspect nxValuehelp: {
+  virtual valueHelpDummy : String;
 }

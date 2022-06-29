@@ -69,7 +69,27 @@ annotate service.Functions with @(
 annotate service.Functions with @(UI.SelectionFields : [
     environment_ID,
     parent_ID,
+    function
 ]);
+
+annotate service.Functions with @(
+    UI.SelectionVariant #variant1: 
+    {
+        Text : 'Meine Selektionsvariante',
+        SelectOptions : [
+            {
+                PropertyName : function,
+                Ranges : [
+                    {
+                        Sign : #I,
+                        Option : #EQ,
+                        Low : 'MT1',
+                    },
+                ],
+            },
+        ],
+    }
+);
 
 annotate service.Functions with {
     environment @Common.Text : environment.description

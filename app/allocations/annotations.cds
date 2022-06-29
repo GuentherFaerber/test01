@@ -202,6 +202,8 @@ annotate service.Allocations with {
         Common.ValueList                : {
             $Type          : 'Common.ValueListType',
             CollectionPath : 'Functions',
+            SelectionVariantQualifier: 'variant1',
+            SearchSupported: false,
             Parameters     : [
                 {
                     $Type             : 'Common.ValueListParameterIn',
@@ -1074,8 +1076,8 @@ annotate service.Allocations with {
             Parameters : [
                 {
                     $Type : 'Common.ValueListParameterIn',
-                    LocalDataProperty : environment.ID,
-                    ValueListProperty : 'environment_ID',
+                    LocalDataProperty : valueHelpDummy,
+                    ValueListProperty : 'valueHelpDummy',
                 },
                 {
                     $Type : 'Common.ValueListParameterInOut',
@@ -1092,5 +1094,10 @@ annotate service.Allocations with {
                 },
             ],
         },
-        Common.ValueListWithFixedValues : false
+        Common.ValueListWithFixedValues : false,
+        // this enhances the the filters of the ValueList. The fields in the CQX refer to 
+        // the CollectionPath of the ValueList 
+        // you can define $self. followed by a parameter of the annotated eintity. This is replaced by the
+        // value of that entity at runtime.
+        NX.valuehelp : ![(type.code = 'MT' or type.code = 'AL') and environment_ID = $self.environment_ID]
 )};
