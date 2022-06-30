@@ -51,6 +51,20 @@
           "subTitle": "{{flpSubtitle}}",
           "icon": ""
         }
+      },
+      "outbounds": {
+        "environments-outbound": {
+          "semanticObject": "Environments",
+          "action": "manage",
+          "parameters": {},
+          "additionalParameters": "allowed"
+        },
+        "functions-outbound": {
+          "semanticObject": "Functions",
+          "action": "manage",
+          "parameters": {},
+          "additionalParameters": "allowed"
+        }
       }
     }
   },
@@ -111,6 +125,15 @@
     "resources": {
       "css": []
     },
+    "extends": {
+      "extensions": {
+        "sap.ui.controllerExtensions": {
+          "sap.fe.templates.ListReport.ListReportController": {
+            "controllerName": "environments.ext.controller.ListReportExtension"
+          }
+        }
+      }
+    },
     "routing": {
       "routes": [
         {
@@ -143,16 +166,7 @@
               "initialLoad": "Enabled",
               "controlConfiguration": {
                 "@com.sap.vocabularies.UI.v1.LineItem": {
-                  "columns": {
-                    "Navigation": {
-                      "header": "My Test",
-                      "position": {
-                        "anchor": "DataField::type_code",
-                        "placement": "After"
-                      },
-                      "template": "environments.ext.fragment.Navigation"
-                    }
-                  }
+                  "columns": {}
                 }
               }
             }
