@@ -10,6 +10,10 @@ module.exports = function () {
     await functionService.onCreate(req);
     return next();
   });
+  this.before(["CREATE", "UPDATE"], "Functions", async (req) => {
+    req.data.function = req.data.function.toUpperCase();
+  });
+
   // this.before("*", async (req) => {
   //   if (cds) {
   //     if (req.target.elements.environment_ID) console.log(req.target.elements.environment_ID);

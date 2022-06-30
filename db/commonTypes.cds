@@ -11,7 +11,7 @@ using {
 type GUID : UUID @odata.Type : 'Edm.String'  @UI.Hidden;
 type Environment : String @title : 'Environment'  @assert.format : '[A-Z,0-9,_]{3}'  @Common.IsUpperCase;
 type Version : String @title : 'Version'  @assert.format : '(^$|[A-Z,0-9,_]{4})'  @Common.IsUpperCase;
-type Function : String @title : 'Function'  @assert.format : '[A-Z,0-9,_]{1,5}'  @Common.IsUpperCase;
+type Function : String @title : 'Function'  @assert.format : '[a-z,A-Z,0-9,_]{1,5}'  @Common.IsUpperCase;
 type Field : String @title : 'Field'  @assert.format : '[A-Z,0-9,_]{1,30}'  @Common.IsUpperCase;
 type Connection : String @title : 'Connection'  @assert.format : '[A-Z,0-9,_]{1,30}'  @Common.IsUpperCase;
 type Partition : String @title : 'Partition'  @assert.format : '[A-Z,0-9,_]{1,20}'  @Common.IsUpperCase;
