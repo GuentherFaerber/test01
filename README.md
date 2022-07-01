@@ -83,6 +83,25 @@ by using the aspect **nxValuehelp**. *A virtual property like documented before 
 This aspect needs to be added to the value help entity as well as to the using entity (the entity that defines the property for which the value help should
 be used).
 
+These properties are the glue between the using and the valuehelp entities. They are used in the ValueList annotation. In this annotaion you define a IN parameter that refers to 
+both entity properties (in the example and by default they have the same name).
+
+```
+annotate service.Allocations with {
+    inputFunction @(Common.ValueList : {
+            $Type : 'Common.ValueListType',
+            CollectionPath : 'Functions',
+            Parameters : [
+                {
+                    $Type : 'Common.ValueListParameterIn',
+                    LocalDataProperty : valueHelpDummy,
+                    ValueListProperty : 'valueHelpDummy',
+                },
+                {
+                    $Type : 'Common.ValueListParameterInOut',
+                    LocalDataProperty : inputFunction_ID,
+```
+
 The aspect is defined in `commonAspects.cds`.
 
 ```
