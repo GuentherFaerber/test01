@@ -1044,7 +1044,7 @@ annotate service.Allocations with @(
             {
                 $Type : 'UI.DataField',
                 Value : inputFunction_ID,
-            },],
+            }],
     }
 );
 annotate service.InputFields with @(
@@ -1074,6 +1074,16 @@ annotate service.Allocations with {
             $Type : 'Common.ValueListType',
             CollectionPath : 'Functions',
             Parameters : [
+                // {
+                //     $Type: 'Common.ValueListParameterConstant',
+                //     Constant : ![@NX.valuehelp:(type.code = 'MT' or type.code = 'AL')],
+                //     ValueListProperty : 'valueHelpDummy',
+                // },
+                // {
+                //     $Type : 'Common.ValueListParameterIn',
+                //     LocalDataProperty : environment_ID,
+                //     ValueListProperty : 'environment_ID',
+                // },
                 {
                     $Type : 'Common.ValueListParameterIn',
                     LocalDataProperty : valueHelpDummy,
@@ -1095,9 +1105,9 @@ annotate service.Allocations with {
             ],
         },
         Common.ValueListWithFixedValues : false,
-        // this enhances the the filters of the ValueList. The fields in the CQX refer to 
+        // this enhances the the filters of the ValueList. The fields in the CXN refer to 
         // the CollectionPath of the ValueList 
         // you can define $self. followed by a parameter of the annotated eintity. This is replaced by the
         // value of that entity at runtime.
-        NX.valuehelp : ![(type.code = 'MT' or type.code = 'AL') and environment_ID = $self.environment_ID]
+        NX.valuehelp : ![(type.code = 'MT' or type.code = 'AL') and ID <> $self.function_ID and environment_ID = $self.environment_ID]
 )};

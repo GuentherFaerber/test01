@@ -124,5 +124,5 @@ aspect selection : {
  * TODO: currently it can only be used with 1 property in an entity. Has to be more generic and universal 
  */
 aspect nxValuehelp: {
-  virtual valueHelpDummy : String;
+  valueHelpDummy : String;
 }

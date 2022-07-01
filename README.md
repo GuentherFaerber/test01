@@ -1,3 +1,26 @@
+<!-- START doctoc generated TOC please keep comment here to allow auto update -->
+<!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
+**Table of Contents**  *generated with [DocToc](https://github.com/thlorenz/doctoc)*
+
+- [Getting Started](#getting-started)
+  - [Next Steps](#next-steps)
+  - [Learn More](#learn-more)
+  - [Ticket solutions](#ticket-solutions)
+    - [FHC-570 Complex value help and validations in one](#fhc-570-complex-value-help-and-validations-in-one)
+      - [Value Help restriction](#value-help-restriction)
+        - [Evaluated standard solution](#evaluated-standard-solution)
+        - [Realized Nexontis solution](#realized-nexontis-solution)
+          - [~~Virtual~~ properties](#virtual-properties)
+          - [Annotations](#annotations)
+          - [CXN](#cxn)
+          - [Generic event handlers](#generic-event-handlers)
+        - [Using ValueListParameterConstant](#using-valuelistparameterconstant)
+      - [Declarative Validation](#declarative-validation)
+        - [@Nexontis.assert.recursion](#nexontisassertrecursion)
+        - [@Nexontis.assert.checkAssocValues](#nexontisassertcheckassocvalues)
+
+<!-- END doctoc generated TOC please keep comment here to allow auto update -->
+
 # Getting Started
 
 Welcome to your new project.
@@ -51,12 +74,12 @@ Cause this is not forseen in the respective OData vocabulary the solution would 
 
 ##### Realized Nexontis solution
 
-The requirement is realized by means of **virtual properties**, **annotations**, **CXN** and indiviual event handlers.
+The requirement is realized by means of **~~virtual~~ properties**, **annotations**, **CXN** and indiviual event handlers.
 
-###### Virtual properties 
+###### ~~Virtual~~ properties 
 
-The entities that are involved in the value help process need to have a (virtual) property **valueHelpDummy**. This can be added to such entities 
-by using the aspect **nxValuehelp**.  
+The entities that are involved in the value help process need to have a property **valueHelpDummy**. This can be added to such entities 
+by using the aspect **nxValuehelp**. *A virtual property like documented before unfortunately does not do the trick*. 
 This aspect needs to be added to the value help entity as well as to the using entity (the entity that defines the property for which the value help should
 be used).
 
@@ -64,7 +87,7 @@ The aspect is defined in `commonAspects.cds`.
 
 ```
 aspect nxValuehelp: {
-  virtual valueHelpDummy : String;
+  valueHelpDummy : String;
 }
 ```
 
@@ -88,6 +111,25 @@ The filter expression for the additional filters are defined with [CXN](https://
 ###### Generic event handlers
 
 The generic event handlers don't have to be implemented by the application developer. If you are interested in the implementation details have a look in `nexontis-annotations.js`.
+
+##### Using ValueListParameterConstant
+
+It's also possible to use the ValueListParameterConstant annotation. 
+
+```
+  {
+      $Type: 'Common.ValueListParameterConstant',
+      Constant : '@NX.valuehelp:(environment_ID = 1)',
+      ValueListProperty : 'valueHelpDummy',
+  },
+```
+
+If you use this variant you cannot use filters that filter on a string e.g.   
+`'@NX.valuehelp:(type.code = 'MT')'`.   
+The reason is that this will throw a parse error because there are `'` around and inside @NX annotation. Hence the surrounding
+`'` need to be escapsed by `![` at the beginning and `]` at the end. This would result in   
+`![@NX.valuehelp:(type.code = 'MT')]`.  
+Although this is the documented way and works for other annotations it does throw a parse error for ValueListParameterConstant.
 
 #### Declarative Validation 
 
