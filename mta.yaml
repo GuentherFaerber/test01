@@ -1,0 +1,68 @@
+---
+_schema-version: '3.1'
+ID: test01
+version: 1.0.0
+description: "A simple CAP project."
+parameters:
+  enable-parallel-deployments: true
+build-parameters:
+  before-all:
+    - builder: custom
+      commands:
+        - npx -p @sap/cds-dk cds build --production
+
+modules:
+  - name: test01-app
+    type: nodejs
+    path: app
+    build-parameters:
+      ignore: ["node_modules/"]
+    parameters:
+      memory: 128M
+      disk-quota: 1024M
+      buildpack: nodejs_buildpack
+    requires:
+      - name: test01-uaa
+      - name: srv-api
+        group: destinations
+        properties:
+           forwardAuthToken: true
+           strictSSL: false
+           name: srv_api
+           url: ~{srv-url}
+
+  - name: test01-srv
+    type: nodejs
+    path: gen/srv
+    parameters:
+      memory: 256M
+      disk-quota: 1024M
+      buildpack: nodejs_buildpack
+    build-parameters:
+      builder: npm-ci
+    provides:
+      - name: srv-api # required by consumers of CAP services (e.g. approuter)
+        properties:
+          srv-url: ${default-url}
+    requires:
+      - name: test01-db
+      - name: test01-uaa
+
+  - name: test01-db-deployer
+    type: hdb
+    path: gen/db
+    parameters:
+      buildpack: nodejs_buildpack
+    requires:
+      - name: test01-db
+
+resources:
+  - name: test01-db
+    type: com.sap.xs.hdi-container
+    parameters:
+      service: hana # or 'hanatrial' on trial landscapes
+      service-plan: hdi-shared
+  - name: test01-uaa
+    parameters:
+      path: ./xs-security.json
+    type: com.sap.xs.uaa

@@ -26,7 +26,9 @@
     "watch-allocations": "cds watch --open allocations/webapp/index.html?sap-ui-xx-viewCache=false#fe-lrop-v4",
     "watch-functions": "cds watch --open functions/webapp/index.html?sap-ui-xx-viewCache=false#fe-lrop-v4",
     "watch-modeltables": "cds watch --open modeltables/webapp/index.html?sap-ui-xx-viewCache=false#fe-lrop-v4",
-    "watch-calculationunits": "cds watch --open calculationunits/webapp/index.html?sap-ui-xx-viewCache=false#fe-lrop-v4"
+    "watch-calculationunits": "cds watch --open calculationunits/webapp/index.html?sap-ui-xx-viewCache=false#fe-lrop-v4",
+    "build:cf": "mbt build",
+    "deploy:cf": "cf deploy mta_archives/test01_1.0.0.mtar"
   },
   "eslintConfig": {
     "extends": "eslint:recommended",
@@ -84,6 +86,11 @@
         "[production]": {
           "kind": "enterprise-messaging",
           "format": "cloudevents"
+        }
+      },
+      "db": {
+        "[production]": {
+          "kind": "hana-cloud"
         }
       }
     },
