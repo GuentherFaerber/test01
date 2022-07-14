@@ -4,3 +4,14 @@ GET  http://localhost:4004/service/modeling/Functions
 ###
 GET http://localhost:4004/v2/service/modeling/Functions
   ?$top=5
+
+###
+POST http://localhost:4004/service/modeling/setSelections
+Content-Type: application/json
+
+{
+    "lowValue": "test"
+}
+
+###
+GET http://localhost:4004/service/modeling/getSelections(1)
