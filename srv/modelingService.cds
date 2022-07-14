@@ -8,43 +8,54 @@ using {Functions as functions} from '../db/functions';
 using {Allocations as allocations} from '../db/allocations';
 using {ModelTables as modelTables} from '../db/modelTables';
 using {CalculationUnits as calculationUnits} from '../db/calculationUnits';
+using {
+    AllocationSenderViews          as allocationSenderViews,
+    AllocationSenderViewSelections as allocationSenderViewSelections
+} from '../db/allocations';
 
 @path : 'service/modeling'
 service ModelingService {
 
     @odata.draft.enabled  @readonly
-    entity Environments      as projection on environments;
+    entity Environments                   as projection on environments;
 
     @odata.draft.enabled
-    entity Fields        as projection on fields;
+    entity Fields                         as projection on fields;
 
     @odata.draft.enabled
-    entity Checks        as projection on checks;
+    entity Checks                         as projection on checks;
 
     @odata.draft.enabled
-    entity CurrencyConversions        as projection on currencyConversions;
+    entity CurrencyConversions            as projection on currencyConversions;
 
     @odata.draft.enabled
-    entity UnitConversions        as projection on unitConversions;
+    entity UnitConversions                as projection on unitConversions;
 
     @odata.draft.enabled
-    entity Partitions        as projection on partitions;
+    entity Partitions                     as projection on partitions;
 
     @odata.draft.enabled
-    entity Functions        as projection on functions actions {
+    entity Functions                      as projection on functions actions {
         @title : 'Activate'
         action activate();
     };
 
     @odata.draft.enabled
-    entity Allocations      as projection on allocations actions {
+    entity Allocations                    as projection on allocations actions {
         @title : 'Activate'
         action activate();
     };
-    @odata.draft.enabled
-    entity CalculationUnits as projection on calculationUnits;
+
+    action getSelections(selectionID : String)                  returns String;
+    action setSelections(selectionID : String, operation : String, lowValue : String) returns String;
 
     @odata.draft.enabled
-    entity ModelTables      as projection on modelTables;
+    entity CalculationUnits               as projection on calculationUnits;
+
+    @odata.draft.enabled
+    entity ModelTables                    as projection on modelTables;
+
+    entity AllocationSenderViews          as projection on allocationSenderViews;
+    entity AllocationSenderViewSelections as projection on allocationSenderViewSelections;
 
 }
