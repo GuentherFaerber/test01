@@ -70,6 +70,6 @@ aspect selection : {
   seq  : Sequence default 0;
   sign : Association to one Signs   @title : 'Sign'  @mandatory;
   opt  : Association to one Options @title : 'Option'  @mandatory;
-  low  : String                     @title : 'Value';
+  low  : String                     @title : 'Low Value';
   high : String                     @title : 'High Value';
 }
