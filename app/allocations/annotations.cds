@@ -55,12 +55,12 @@ annotate service.Allocations with @(
             Label  : 'Signature',
             ID     : 'Signature',
             Facets : [
-                {
-                    $Type  : 'UI.ReferenceFacet',
-                    Label  : 'Sender Selection Fields',
-                    ID     : 'SenderSelectionFields',
-                    Target : 'selectionFields/@UI.LineItem#SenderSelectionFields',
-                },
+                // {
+                //     $Type  : 'UI.ReferenceFacet',
+                //     Label  : 'Sender Selection Fields',
+                //     ID     : 'SenderSelectionFields',
+                //     Target : 'selectionFields/@UI.LineItem#SenderSelectionFields',
+                // },
                 {
                     $Type  : 'UI.ReferenceFacet',
                     Label  : 'Sender Action Fields',
@@ -658,39 +658,39 @@ annotate service.AllocationReceiverViews with {
     order @Common.Text : order.name
 };
 
-annotate service.AllocationSenderViews with @(
-    UI.Facets                         : [
-        {
-            $Type  : 'UI.ReferenceFacet',
-            Label  : 'General Information',
-            ID     : 'GeneralInformation',
-            Target : '@UI.FieldGroup#GeneralInformation',
-        },
-        {
-            $Type  : 'UI.ReferenceFacet',
-            Label  : 'Selections',
-            ID     : 'Selections',
-            Target : 'selections/@UI.LineItem#Selections',
-        },
-    ],
-    UI.FieldGroup #GeneralInformation : {
-        $Type : 'UI.FieldGroupType',
-        Data  : [
-            {
-                $Type : 'UI.DataField',
-                Value : field_ID,
-            },
-            {
-                $Type : 'UI.DataField',
-                Value : formula,
-            },
-            {
-                $Type : 'UI.DataField',
-                Value : order_code,
-            },
-        ],
-    }
-);
+// annotate service.AllocationSenderViews with @(
+//     UI.Facets                         : [
+//         {
+//             $Type  : 'UI.ReferenceFacet',
+//             Label  : 'General Information',
+//             ID     : 'GeneralInformation',
+//             Target : '@UI.FieldGroup#GeneralInformation',
+//         },
+//         {
+//             $Type  : 'UI.ReferenceFacet',
+//             Label  : 'Selections',
+//             ID     : 'Selections',
+//             Target : 'selections/@UI.LineItem#Selections',
+//         },
+//     ],
+//     UI.FieldGroup #GeneralInformation : {
+//         $Type : 'UI.FieldGroupType',
+//         Data  : [
+//             {
+//                 $Type : 'UI.DataField',
+//                 Value : field_ID,
+//             },
+//             {
+//                 $Type : 'UI.DataField',
+//                 Value : formula,
+//             },
+//             {
+//                 $Type : 'UI.DataField',
+//                 Value : order_code,
+//             },
+//         ],
+//     }
+// );
 
 annotate service.AllocationSenderViewSelections with @(UI.LineItem #Selections : [
     {
