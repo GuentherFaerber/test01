@@ -1,0 +1,90 @@
+_schema-version: "3.1"
+ID: test01
+description: A simple CAP project.
+version: 1.0.0
+modules:
+- name: test01-srv
+  type: nodejs
+  path: gen/srv
+  requires:
+  - name: test01-db
+  provides:
+  - name: srv-api
+    properties:
+      srv-url: ${default-url}
+  parameters:
+    buildpack: nodejs_buildpack
+  build-parameters:
+    builder: npm-ci
+- name: test01-db-deployer
+  type: hdb
+  path: db
+  requires:
+  - name: test01-db
+  parameters:
+    buildpack: nodejs_buildpack
+- name: test01-app-content
+  type: com.sap.application.content
+  path: .
+  requires:
+  - name: test01-repo-host
+    parameters:
+      content-target: true
+  build-parameters:
+    build-result: resources
+    requires:
+    - artifacts:
+      - nsfunctions.zip
+      name: nsfunctions
+      target-path: resources/
+- name: nsfunctions
+  type: html5
+  path: app/functions
+  build-parameters:
+    build-result: dist
+    builder: custom
+    commands:
+    - npm install
+    - npm run build:cf
+    supported-platforms: []
+resources:
+- name: test01-db
+  type: com.sap.xs.hdi-container
+  parameters:
+    service: hana
+    service-plan: hdi-shared
+  properties:
+    hdi-service-name: ${service-name}
+- name: test01-repo-host
+  type: org.cloudfoundry.managed-service
+  parameters:
+    service: html5-apps-repo
+    service-name: test01-html5-srv
+    service-plan: app-host
+- name: test01-destination-service
+  type: org.cloudfoundry.managed-service
+  parameters:
+    config:
+      HTML5Runtime_enabled: false
+      init_data:
+        instance:
+          destinations:
+          - Authentication: NoAuthentication
+            Name: ui5
+            ProxyType: Internet
+            Type: HTTP
+            URL: https://ui5.sap.com
+          existing_destinations_policy: update
+      version: 1.0.0
+    service: destination
+    service-name: test01-destination-service
+    service-plan: lite
+parameters:
+  deploy_mode: html5-repo
+  enable-parallel-deployments: true
+build-parameters:
+  before-all:
+  - builder: custom
+    commands:
+    - npm ci
+    - npx -p @sap/cds-dk cds build --production

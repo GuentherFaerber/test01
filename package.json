@@ -8,9 +8,10 @@
   "dependencies": {
     "@sap/cds": "^5",
     "@sap/cds-odata-v2-adapter-proxy": "^1.8.19",
+    "@sap/hana-client": "^2.13.21",
     "@sap/textbundle": "^4.1.0",
     "express": "^4",
-    "hdb": "^0.19.0",
+    "hdb": "^0.19.4",
     "latest-version": "^6.0.0"
   },
   "devDependencies": {
@@ -54,52 +55,24 @@
     }
   },
   "cds": {
-    "requires": {
-      "auth": {
-        "kind": "basic-auth",
-        "users": {
-          "alice": {
-            "roles": [
-              "admin"
-            ]
-          },
-          "bob": {
-            "roles": [
-              "Modeler",
-              "builder"
-            ]
-          },
-          "*": false
-        }
-      },
-      "messaging": {
-        "[development]": {
-          "kind": "file-based-messaging",
-          "format": "cloudevents"
+    "build": {
+      "tasks": [
+        {
+          "for": "hana",
+          "dest": "../db"
         },
-        "[xxxhybrid]": {
-          "kind": "enterprise-messaging-shared",
-          "format": "cloudevents"
-        },
-        "[production]": {
-          "kind": "enterprise-messaging",
-          "format": "cloudevents"
+        {
+          "for": "node-cf"
         }
-      }
-    },
-    "cdsc": {
-      "docs": true
+      ]
     },
     "hana": {
-      "journal": {
-        "enable-drop": false,
-        "change-mode": "alter"
-      },
       "deploy-format": "hdbtable"
     },
-    "features": {
-      "assert_integrity": "db",
-      "xxxkibana_formatter": true
+    "requires": {
+      "db": {
+        "kind": "hana"
+      }
     }
   },
   "sapux": [
