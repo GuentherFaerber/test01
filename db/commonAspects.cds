@@ -70,16 +70,23 @@ aspect functionExecutable : function, nxValuehelp {
   processingType       : Association to one FunctionProcessingTypes    @title : 'Processing Type';
   businessEventType    : Association to one FunctionBusinessEventTypes @title : 'Business Event Type';
   partition            : Association to one Partitions                 @title : 'Partition';
-  inputFunction        : Association to one Functions                  @title : 'Sender Input'
-                           @NX.assert.recursion : false
-                           @(NX.assert.checkAssocValues : {
-                             association   : 'type',
-                             field         : 'code',
-                             allowedValues : [
-                               'MT',
-                               'AL'
-                             ]
-                           });
+  inputFunction        : Association to one Functions @title               :    'Sender Input'
+                                                      //@NX.assert.recursion :    false
+                                                      @(NX.assert.validate : ![(type.code = 'MT' or type.code = 'AL') and ID <> $self.function_ID and environment_ID = $self.environment_ID])
+                                                      // @(NX.assert.checkAssocValues : {
+                                                      //    association   : 'type',
+                                                      //    field         : 'code',
+                                                      //    allowedValues : [
+                                                      //      'MT',
+                                                      //      'AL'
+                                                      //    ]
+                                                      // })
+                                                      // this enhances the the filters of the ValueList. The fields in the CXN refer to
+                                                      // the CollectionPath of the ValueList
+                                                      // you can define $self. followed by a parameter of the annotated entity. This is replaced by the
+                                                      // value of that entity at runtime.
+                                                      //@NX.valuehelp : ![(type.code = 'MT' or type.code = 'AL') and ID <> '$self.ID' and environment_ID = $self.environment_ID]
+                                                      ;
     inputFields          : Composition of many InputFields
                              on inputFields.function.ID = function.ID       @title : 'Sender Fields';
   }
@@ -124,5 +131,5 @@ aspect selection : {
  * TODO: currently it can only be used with 1 property in an entity. Has to be more generic and universal 
  */
 aspect nxValuehelp: {
-  valueHelpDummy : String;
+  virtual valueHelpDummy : String;
 }

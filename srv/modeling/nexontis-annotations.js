@@ -15,10 +15,10 @@ module.exports = function () {
    * This function handles the @NX.assert.recursion annotation.
    * if ths annoation is set to false for a property of an entity it checks if the value of the property is equal
    * to ID of the target and throws an error in that case.
+   * @deprecated use annotation \@NX.assert.validate
    */
-  // eslint-disable-next-line no-undef
-  handleRecursionConstraint = (req) => {
-    // Filter all target.elements that have annoation @NX.assert.recursive set and that are a foreignKey
+  function handleRecursionConstraint(req) {
+    // Filter all target.elements that have annotation @NX.assert.recursive set and that are a foreignKey
     const arrElementsWithAnnotation = Object.entries(
       req.target.elements
     ).filter((entry) => {
@@ -40,7 +40,7 @@ module.exports = function () {
         }
       }
     }
-  };
+  }
 
   /**
    * This function handles the @NX.assert.checkAssocValues annotation
@@ -59,9 +59,10 @@ module.exports = function () {
    * where association is the association that has to be checked for the foreign key
    * field is the name of the field in the lookup entity and
    * allowedValues is an array of allowed values for the field in the lookup table
+   *
+   * @deprecated use annotation \@NX.assert.validate
    */
-  // eslint-disable-next-line no-undef
-  handleCheckAssocValueConstraint = async (req, srv) => {
+  async function handleCheckAssocValueConstraint(req, srv) {
     const arrElementsWithAnnotation = Object.entries(
       req.target.elements
     ).filter((entry) => {
@@ -104,20 +105,77 @@ module.exports = function () {
         );
       }
     }
-  };
+  }
+
+  /**
+   * This function handles the @NX.assert.validate annotation
+   * It pulls the CXN from this annotation, parses it, runs a SELECT query with it and
+   * checks if the foreign key of the property this annotation is defined for is in
+   * the result set of the query. If not an error is thrown cause then the entered value
+   * is not allowed by the assertion.
+   * The CXN can contain $self. patterns, e.g. environment_ID = $self.environment_ID. This evaluates
+   * the properties value, in this case environment_ID, at runtime from the current object.
+   */
+  async function handleNXValidation(req, srv) {
+    const arrElementsWithAnnotation = Object.entries(
+      req.target.elements
+    ).filter((entry) => {
+      return (
+        !!entry[1]["@NX.assert.validate"] && entry[1].type === "cds.Association"
+      );
+    });
+    for (let elementWithAnnotations of arrElementsWithAnnotation) {
+      const elementWithAnnotation = elementWithAnnotations[1];
+      let validationExpression;
+      // if string was escaped with ![...] there is an element with key =
+      if (elementWithAnnotation["@NX.assert.validate"]["="]) {
+        validationExpression =
+          elementWithAnnotation["@NX.assert.validate"]["="];
+      } else {
+        validationExpression = elementWithAnnotation["@NX.assert.validate"];
+      }
+      validationExpression = replace$self(validationExpression, req.data);
+      const parsedCXN = cds.parse.expr(validationExpression);
+      const fkEntitySet = elementWithAnnotation.target.match(/(.*)\.(.*)/)[2];
+      const fkFieldName = elementWithAnnotation.keys[0].$generatedFieldName;
+      const fkKeyFieldName = Object.keys(elementWithAnnotation.foreignKeys)[0];
+      const query = SELECT.from(fkEntitySet);
+      query.SELECT.where = parsedCXN.xpr;
+      // req.query.SELECT.where = req.query.SELECT.where.flat(1);
+
+      const results = await srv.run(query);
+      console.log(parsedCXN);
+      if (
+        undefined ===
+        results.find(
+          (resultItem) => resultItem[fkKeyFieldName] === req.data[fkFieldName]
+        )
+      ) {
+        req.error(`value ${req.data[fkFieldName]} is not allowed.`);
+      }
+    }
+  }
 
   /**
    * replaces $self.<propertyname> with the value of the property in the given
    * entity
    */
-  // eslint-disable-next-line no-undef
-  replace$self = (str, entity) => {
+  function replace$self(str, entity) {
     const idx = str.indexOf("$self.");
     if (idx > -1) {
       const prefix = str.substr(0, idx);
       const tail = str.substr(idx + 6);
-      const variableName = tail.split(" ")[0];
-      if (!entity.hasOwnProperty(variableName)) {
+      const match = tail.match(/(\w+)/);
+      if (!match || match.length < 2) {
+        throw new VHExpressionParseError(
+          `parsing expression ${str} failed. Did you use $self correctly?`
+        );
+      }
+
+      // const variableName = tail.split(" ")[0];
+      const variableName = match[1];
+      //if (!entity.hasOwnProperty(variableName)) {
+      if (!Object.prototype.hasOwnProperty.call(entity, variableName)) {
         throw new VHExpressionParseError(
           `variable name $self.${variableName} cannot be resolved in entity.`
         );
@@ -130,14 +188,106 @@ module.exports = function () {
     } else {
       return str;
     }
-  };
+  }
 
-  this.before(["CREATE", "UPDATE"], "*", async (req) => {
-    // eslint-disable-next-line no-undef
-    //    handleRecursionConstraint(req);
-    // eslint-disable-next-line no-undef
-    //    handleCheckAssocValueConstraint(req, this);
-  });
+  /**
+   *
+   * @param {*} keys
+   * @param {*} entity
+   * @returns
+   * @deprecated not used any longer
+   */
+  function getKeysForRequest(keys, entity) {
+    const keyObj = {};
+    const keyNames = Object.keys(keys);
+
+    for (let key of keyNames) {
+      if (key !== "IsActiveEntity") {
+        keyObj[key] = entity[key];
+      }
+    }
+    return keyObj;
+  }
+
+  /** It's possible to define a valuehelp filter as Common.ValueListParameterConstant in the ValueList annotation
+   * via CXN with a prefix of @NX:
+   * In that case this is available in the where clause of the select statement.
+   * This function converts this temporary filter definition into a definition for the service/db request.
+   */
+  function handleNXValueListParameterConstantFilter(arrWhereClause) {
+    const arrElemsToDelete = [];
+    const arrElemsToAdd = [];
+    for (let i = 0; i < arrWhereClause.length; i++) {
+      const curArrElem = arrWhereClause[i];
+      if (
+        curArrElem.val &&
+        typeof curArrElem.val === "string" &&
+        curArrElem.val.match(/^@NX:/)
+      ) {
+        // mark this element and the two before (ref to property, operator) as deletable
+        arrElemsToDelete.push(i - 2);
+        // pull CXN expression from the val string
+        const cxnString = curArrElem.val.match(/^@NX:(.*)/)[1];
+        const parsedCXN = cds.parse.expr(cxnString.replace(/"/g, "'"));
+        arrElemsToAdd.push(parsedCXN);
+      }
+    }
+    // delete temporary elements from arrWhereClause
+    for (let i = arrElemsToDelete.length - 1; i > -1; i--) {
+      // if there is a preceeding 'and' it has to be deleted as well.
+      if (
+        arrWhereClause[arrElemsToDelete[i] - 1] &&
+        arrWhereClause[arrElemsToDelete[i] - 1] === "and"
+      ) {
+        arrWhereClause.splice(arrElemsToDelete[i] - 1, 4);
+      } else {
+        arrWhereClause.splice(arrElemsToDelete[i], 3);
+      }
+    }
+    if (arrWhereClause[0] === "and") {
+      arrWhereClause.splice(0, 1);
+    }
+    // add the parsed CXN(s) to the where clause array
+    for (const oElemToAdd of arrElemsToAdd) {
+      arrWhereClause.push("and");
+      arrWhereClause.push(oElemToAdd);
+    }
+    if (arrWhereClause[0] === "and") {
+      arrWhereClause.splice(0, 1);
+    }
+    return arrWhereClause;
+  }
+
+  /**
+   * deletes the artefacts from the where clause that were added by the @NX.valuehelp annotation.
+   * @param {string} arrWhere
+   * @returns
+   */
+  function deleteNXValuehelpFromWhere(arrWhere) {
+    let start = -1,
+      deleteCount = -1;
+    for (let i = 0; i < arrWhere.length; i++) {
+      if (
+        typeof arrWhere[i] === "object" &&
+        arrWhere[i].hasOwnProperty("ref") &&
+        arrWhere[i].ref[0] === "valueHelpDummy"
+      ) {
+        start = i;
+        deleteCount = 3;
+      }
+    }
+    if (
+      start > -1 &&
+      deleteCount > -1 &&
+      ["and", "or"].indexOf(arrWhere[start + 3]) > -1
+    ) {
+      deleteCount = deleteCount + 1;
+    }
+    if (start > -1 && deleteCount > -1) {
+      arrWhere.splice(start, deleteCount);
+    }
+    return arrWhere;
+  }
 
   /**
    * When activating this functionality the following appears. The validation is done correctly while patching the
@@ -173,17 +323,17 @@ module.exports = function () {
         valuehelpExpression = elementWithAnnotation[1]["@NX.valuehelp"];
       }
       try {
-        // eslint-disable-next-line no-undef
         valuehelpExpression = replace$self(valuehelpExpression, each);
-        const entityName = req.target.name.match(/(.*)\.(.*)/)[2];
-        const keyObj = getKeysForRequest(req.target.keys, each);
-
-        //each.valueHelpDummy = "@NX.valuehelp:" + valuehelpExpression;
-        const query = UPDATE(entityName, keyObj).with({
-          valueHelpDummy: "@NX.valuehelp:" + valuehelpExpression,
-        });
-        const affectedRows = await this.run(query);
-        console.log(`Number of updated rows: ${affectedRows}`);
+        // before cds 6.x.x this was necessary
+        // const entityName = req.target.name.match(/(.*)\.(.*)/)[2];
+        // eslint-disable-next-line no-undef
+        // const keyObj = getKeysForRequest(req.target.keys, each);
+        // const query = UPDATE(entityName, keyObj).with({
+        //   valueHelpDummy: "@NX.valuehelp:" + valuehelpExpression,
+        // });
+        // const affectedRows = await this.run(query);
+        // console.log(`Number of updated rows: ${affectedRows}`);
+        each.valueHelpDummy = "@NX.valuehelp:" + valuehelpExpression;
       } catch (err) {
         console.log(err.message);
         console.log(err.stack);
@@ -191,21 +341,9 @@ module.exports = function () {
     }
   });
 
-  getKeysForRequest = (keys, entity) => {
-    const keyObj = {};
-    const keyNames = Object.keys(keys);
-
-    for (let key of keyNames) {
-      if (key !== "IsActiveEntity") {
-        keyObj[key] = entity[key];
-      }
-    }
-    return keyObj;
-  };
-
   /**
    * This before READ handler checks if a @NX.valuehelp where condition is available.
-   * If so the content (CQX) of this where condition is parsed and added to the where
+   * If so the content (CXN) of this where condition is parsed and added to the where
    * clause of the SELECT query.
    * The content of ths @NX.valuehelp where condition is defined via an annotation of the
    * parent entity in a FK scenario.
@@ -234,6 +372,12 @@ module.exports = function () {
           req.query.SELECT.where.push(customFilterMap[0].xpr);
           req.query.SELECT.where = req.query.SELECT.where.flat(1);
         }
+        // It's also possible to define a valuehelp filter as Common.ValueListParameterConstant in the ValueList annotation
+        // In that case this is available in the where clause of the select statement.
+        req.query.SELECT.where = handleNXValueListParameterConstantFilter(
+          req.query.SELECT.where
+        );
+        console.log(req.query.SELECT.where);
       }
     } catch (err) {
       console.log(err.message);
@@ -241,29 +385,12 @@ module.exports = function () {
     }
   });
 
-  deleteNXValuehelpFromWhere = (arrWhere) => {
-    let start = -1,
-      deleteCount = -1;
-    for (let i = 0; i < arrWhere.length; i++) {
-      if (
-        typeof arrWhere[i] === "object" &&
-        arrWhere[i].hasOwnProperty("ref") &&
-        arrWhere[i].ref[0] === "valueHelpDummy"
-      ) {
-        start = i;
-        deleteCount = 3;
-      }
-    }
-    if (
-      start > -1 &&
-      deleteCount > -1 &&
-      ["and", "or"].indexOf(arrWhere[start + 3]) > -1
-    ) {
-      deleteCount = deleteCount + 1;
-    }
-    if (start > -1 && deleteCount > -1) {
-      arrWhere.splice(start, deleteCount);
-    }
-    return arrWhere;
-  };
+  this.before(["CREATE", "UPDATE"], "*", async (req) => {
+    // eslint-disable-next-line no-undef
+    //    handleRecursionConstraint(req);
+    // eslint-disable-next-line no-undef
+    //    handleCheckAssocValueConstraint(req, this);
+    handleNXValidation(req, this);
+  });
+
 };

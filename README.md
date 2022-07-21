@@ -7,15 +7,13 @@
   - [Learn More](#learn-more)
   - [Ticket solutions](#ticket-solutions)
     - [FHC-570 Complex value help and validations in one](#fhc-570-complex-value-help-and-validations-in-one)
-      - [Value Help restriction](#value-help-restriction)
+      - [Declarative Value Help filter](#declarative-value-help-filter)
         - [Evaluated standard solution](#evaluated-standard-solution)
         - [Realized Nexontis solution](#realized-nexontis-solution)
-          - [~~Virtual~~ properties](#virtual-properties)
-          - [Annotations](#annotations)
-          - [CXN](#cxn)
-          - [Generic event handlers](#generic-event-handlers)
-        - [Using ValueListParameterConstant](#using-valuelistparameterconstant)
+          - [ValueListParameterConstant solution](#valuelistparameterconstant-solution)
+          - [Virtual properties solution](#virtual-properties-solution)
       - [Declarative Validation](#declarative-validation)
+      - [Declarative Validation (deprecated, not used any longer)](#declarative-validation-deprecated-not-used-any-longer)
         - [@Nexontis.assert.recursion](#nexontisassertrecursion)
         - [@Nexontis.assert.checkAssocValues](#nexontisassertcheckassocvalues)
 
@@ -53,9 +51,14 @@ Learn more at https://cap.cloud.sap/docs/get-started/.
 
 This ticket consists of two parts
 
-#### Value Help restriction
+- Declarative Value Help filter
+- Declarative validation
 
-It should be possible to restrict the values of the value help with some indiviual filters. 
+#### Declarative Value Help filter
+
+In addition to the declarative ValueList annotation with its various parameters it should be possible to restrict the values of the value help with some indiviual filters declaratively.  
+The ValueList parameters are combined with **and** operators. This is not sufficient for many use cases. Hence another solution needs to be found. 
+
 In general it should be possible to achieve this with a selection variant that is applied to the 
 value help dialog.
 
@@ -74,12 +77,56 @@ Cause this is not forseen in the respective OData vocabulary the solution would 
 
 ##### Realized Nexontis solution
 
-The requirement is realized by means of **~~virtual~~ properties**, **annotations**, **CXN** and indiviual event handlers.
+Because of the issues with the "standard solution" the requirement is realized in this repository 
 
-###### ~~Virtual~~ properties 
+1. with a modification of Common.ValueListParameterConstant annotation,
+2. by means of **virtual properties**, **annotations**, **CXN** and indiviual event handlers.
 
-The entities that are involved in the value help process need to have a property **valueHelpDummy**. This can be added to such entities 
-by using the aspect **nxValuehelp**. *A virtual property like documented before unfortunately does not do the trick*. 
+*CXN*
+
+Both solutions use [CXN](https://cap.cloud.sap/docs/cds/cxn) as expression language to define the filters.
+
+*Generic event handlers*
+
+The event handlers don't have to be implemented by the application developer. They are implemented in [nexontis-annotations.js](./srv/modeling/nexontis-annotations.js). Have a look at it for
+more details.
+
+###### ValueListParameterConstant solution
+
+The valueList annotation ValueListParameterConstant can be used to define value help filters declaratively.  
+This solution uses a special @NX syntax in the constant definition.
+```
+  {
+      $Type: 'Common.ValueListParameterConstant',
+      Constant: '@NX:(type.code = "MT" or type.code = "AL")',
+      ValueListProperty : 'type_code',
+  },
+```
+To use this function the value of the constant property of this annotation needs to start with **@NX:**.  
+After the colon a CXN expression follows that defines the filter restrictions. In this filter expression you can
+define filters for all properties of the entity given in the collectionPath of the the ValueList annotation.
+
+**Important note**  
+Although this is deprecated by CAP strings in the CXN expression have to be surrounded by `" (double quotes)` as you can see
+in the above example ("MT"). These double quotes are replaced by single quotes at runtime to avoid a CXN parse error.  
+This is necessarry cause the recommended way by using `![]` does not work for ValueListParameterConstant.
+
+**Disadvantage**  
+With this solution it is not possible to filter the value list by dynamic values of the parents entity. That said you cannot
+define a filter expression `environment_ID = $self.environment_ID` which is possible with the [Virtual properties solution](#virtual-properties-solution).  
+To filter on such values the standard ValueList parameter `ValueListParameterIn` can be used. 
+
+This approach uses the generic before read handler in [nexontis-annotations.js](./srv/modeling/nexontis-annotations.js).  
+See function `handleNXValueListParameterConstantFilter` for the implementation.
+
+###### Virtual properties solution
+
+**Note:**  
+This solution is not finally implemented yet. It currently shows an approach that is more flexible than [ValueListParameterConstant solution](#valuelistparameterconstant-solution) but comes
+with a higher implementation effort and an additional virtual property, resp. an aspect, and an additional @NX annotation. See the TODOs section for more details on open issues.
+
+The entities that are involved in the value help process need to have a virtual property **valueHelpDummy**. This can be added to such entities 
+by using the aspect **nxValuehelp**. 
 This aspect needs to be added to the value help entity as well as to the using entity (the entity that defines the property for which the value help should
 be used).
 
@@ -100,64 +147,75 @@ annotate service.Allocations with {
                 {
                     $Type : 'Common.ValueListParameterInOut',
                     LocalDataProperty : inputFunction_ID,
+                    ...
 ```
 
-The aspect is defined in `commonAspects.cds`.
+The aspect is defined in [commonAspects.cds](./db/commonAspects.cds).
 
 ```
 aspect nxValuehelp: {
-  valueHelpDummy : String;
+  virtual valueHelpDummy : String;
 }
 ```
 
-###### Annotations 
+**Annotations** 
 
-The property that should display the value help and that already has the ValueList annotation additionally needs the annotaion **NX.valuehelp**.
-This annotation defines the additional query clauses like shown in the example below.
-
-You can use field of the valuehelp entity that is defined in the collectionPath of the ValueList annotation to add additional filters.
-The values can be statich ones or those of the properties of the using entity. The latter are defines with the syntax **$self.<any fieldname of the using entiy>**.
-Those references are resolved at runtime.
-
+The property that is supposed to display the value help and that already has the ValueList annotation additionally needs the annotaion **NX.valuehelp**.
+This annotation defines the additional query clauses leveraging the CXN expression language like shown in the example below.
 ```
 NX.valuehelp : ![(type.code = 'MT' or type.code = 'AL') and environment_ID = $self.environment_ID]
 ```
+You can use fields of the valuehelp entity that is defined in the collectionPath of the ValueList annotation to add additional filters.
+The values of these fields can be static ones (type.code = 'MT') or they can refer to properties of the using entity (environment_ID = $self.environment_ID). 
+The latter ones are defines with the syntax **$self.<any fieldname of the using entiy>**.  
+Those references are resolved at runtime. This gives a higher level of flexibility.
 
-###### CXN
+**TODOs**
+For a complete implementation of this solution the following topics have to be implemented. This is currently postponed cause this solution may be not further pursued.
 
-The filter expression for the additional filters are defined with [CXN](https://cap.cloud.sap/docs/cds/cxn).
+*Change valueHelpDummy property to array*
 
-###### Generic event handlers
+The valueHelpDummy property of aspect `nxValuehelp` is currently defined as string. Hence it is only possible to define a valueHelp extension for one property. 
+To make it usable for an arbitrary amount of properties the type of this property should be changed to a map with the property name as key and the CXN expression as
+value.
 
-The generic event handlers don't have to be implemented by the application developer. If you are interested in the implementation details have a look in `nexontis-annotations.js`.
-
-##### Using ValueListParameterConstant
-
-It's also possible to use the ValueListParameterConstant annotation. 
-
-```
-  {
-      $Type: 'Common.ValueListParameterConstant',
-      Constant : '@NX.valuehelp:(environment_ID = 1)',
-      ValueListProperty : 'valueHelpDummy',
-  },
-```
-
-If you use this variant you cannot use filters that filter on a string e.g.   
-`'@NX.valuehelp:(type.code = 'MT')'`.   
-The reason is that this will throw a parse error because there are `'` around and inside @NX annotation. Hence the surrounding
-`'` need to be escapsed by `![` at the beginning and `]` at the end. This would result in   
-`![@NX.valuehelp:(type.code = 'MT')]`.  
-Although this is the documented way and works for other annotations it does throw a parse error for ValueListParameterConstant.
+*Implement Draft Mode event handlers*
+Currently the evaluation of the dynamic parts of the CXN expression ($self...) is only implemented in the generic AFTER READ handler. Hence it does not work for
+new objects of if values of the object change at runtime.  
+To support this it should be sufficient to also implement it in teh Draft Mode event handlers (PATCH, NEW, EDIT, ...).
 
 #### Declarative Validation 
+
+The validation part of ticket [FHC-570](https://nexontis.atlassian.net/browse/FHC-570) is implemented using an @NX.assert annotation.  
+We are using assertions cause this is the standard way in CAP for validation annotations. 
+
+This validation is implemented in the before-CREATE and before-UPDATE handler in [nexontis-annotations.js](./srv/modeling/nexontis-annotations.js).  
+To see implementation details have a look at the function `handleNXValidation`.
+
+To use this validation you simply add a **@NX.assert.validate** annotation to the property that should be validated.
+```
+  @(NX.assert.validate : ![(type.code = 'MT' or type.code = 'AL') and ID <> $self.function_ID and environment_ID = $self.environment_ID])
+```
+After the colon you define a CXN expression that defines the validation rules. The validate function runs a SELECT on the association entity with
+this filter and checks if the value the user selected/entered for the (foreign-key) field is part of the result set. If not a validation error is thrown.
+As described in [Virtual property solution](#virtual-properties-solution) it is possible to use the **$self** keyword to replace the string by the current value 
+of the parents property at runtime.
+
+**TODOs (???)**  
+This solution currently only works for to-one associations. If other use cases that can't be handled by standard CAP validations are needed they
+must be implemented.
+
+#### Declarative Validation (deprecated, not used any longer)
+
+**Note**  
+This solution is not used any longer as of 07/21/2022
 
 The solution for the validation part of ticket [FHC-570](https://nexontis.atlassian.net/browse/FHC-570) looks like this:
 
 Define a @Nexontis.assert annotation at an element (currently only associations are supported). Those annotations will be evaluated at runtime and rejects
 to store the entity to the database if the assertion is not fullfilled.
 
-Have a look at the file `srv/modeling/nexontis-annotations.js` for implementation details.
+Have a look at the file [nexontis-annotations.js](./srv/modeling/nexontis-annotations.js) for implementation details.
 
 The following annotations are currently implemented.
 
