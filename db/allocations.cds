@@ -56,7 +56,8 @@ entity Allocations : managed, functionExecutable {
         termYear                : TermYear;
         termMinimum             : TermMinimum;
         termMaximum             : TermMaximum;
-        receiverFunction        : Association to one Functions       @title       : 'Receiver Input';
+        receiverFunction        : Association to one Functions       @title       : 'Receiver Input'
+                                        @(NX.validate : ![(type.code = 'AL') and environment_ID = $self.environment_ID]);
         receiverViews           : Composition of many AllocationReceiverViews
                                       on receiverViews.allocation = $self           @title       : 'Receiver View';
         earlyExitCheck          : Association to one AllocationEarlyExitChecks      @title       : 'Early Exit Check';

@@ -51,7 +51,8 @@ aspect environment : {
 }
 
 aspect function : environment {
-  function : Association to one Functions @title : 'Function'  @mandatory;
+  function : Association to one Functions @title : 'Function'  @mandatory
+                                                      @(NX.validate : ![environment_ID = $self.environment_ID])
 }
 
 aspect field : environment {
@@ -62,7 +63,7 @@ aspect check : environment {
   check : Association to one Checks @mandatory;
 }
 
-aspect functionExecutable : function, nxValuehelp {
+aspect functionExecutable : function, nxValidate {
   includeInputData     : IncludeInputData default false;
   resultHandling       : Association to one ResultHandlings            @title : 'Result Handling';
   includeInitialResult : IncludeInitialResult default false;
@@ -72,7 +73,7 @@ aspect functionExecutable : function, nxValuehelp {
   partition            : Association to one Partitions                 @title : 'Partition';
   inputFunction        : Association to one Functions @title               :    'Sender Input'
                                                       //@NX.assert.recursion :    false
-                                                      @(NX.assert.validate : ![(type.code = 'MT' or type.code = 'AL') and ID <> $self.function_ID and environment_ID = $self.environment_ID])
+                                                      @(NX.validate : ![(type.code = 'MT' or type.code = 'AL') and ID <> $self.function.ID and environment_ID = $self.environment_ID])
                                                       // @(NX.assert.checkAssocValues : {
                                                       //    association   : 'type',
                                                       //    field         : 'code',
@@ -85,7 +86,7 @@ aspect functionExecutable : function, nxValuehelp {
                                                       // the CollectionPath of the ValueList
                                                       // you can define $self. followed by a parameter of the annotated entity. This is replaced by the
                                                       // value of that entity at runtime.
-                                                      //@NX.valuehelp : ![(type.code = 'MT' or type.code = 'AL') and ID <> '$self.ID' and environment_ID = $self.environment_ID]
+                                                      // @NX.valuehelp : ![(type.code = 'MT' or type.code = 'AL') and ID <> '$self.ID' and environment_ID = $self.environment_ID]
                                                       ;
     inputFields          : Composition of many InputFields
                              on inputFields.function.ID = function.ID       @title : 'Sender Fields';
@@ -125,11 +126,22 @@ aspect selection : {
 }
 
 /**
- * entities which define nexontis valuehelp need to use this aspect. The field in this aspect
- * transports the data of the declaratively defined valuehelp from the using entity to the valuehelp 
- * entity defined via the collectionpath in the valuelist annotation
- * TODO: currently it can only be used with 1 property in an entity. Has to be more generic and universal 
+ * nxValidateAnnotions are used within value help dialogs for foreign keys as 
+ * well as in before save handler to validate the value defined for foreign keys.
+ * They are defined using the @NX.validate annotation
  */
-aspect nxValuehelp: {
-  virtual valueHelpDummy : String;
+type nxValidateAnnotation: {
+  target : String;
+  element : String;
+  cxn     : String;
+}
+/**
+ * entities which define nexontis validate need to use this aspect. The field in this aspect
+ * transports the data of the declaratively defined valuehelp from the using entity to the valuehelp 
+ * entity defined via the collectionpath in the valuelist annotation.  
+ * It is also used during validation of foreign keys.
+ */
+aspect nxValidate: {
+  //virtual validateDummy : String;
+  virtual validateDummyField : String @title : ' ' // @UI.Hidden this annotation does not hide the field from the valuelist but hides it from the resulting SELECT  
 }

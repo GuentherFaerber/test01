@@ -413,6 +413,11 @@ annotate service.Allocations with {
                     $Type             : 'Common.ValueListParameterDisplayOnly',
                     ValueListProperty : 'description',
                 },
+                {
+                    $Type: 'Common.ValueListParameterConstant',
+                    Constant: 'Allocations.receiverFunction',
+                    ValueListProperty : 'validateDummyField',
+                },
             ],
         },
         Common.ValueListWithFixedValues : false
@@ -1074,22 +1079,11 @@ annotate service.Allocations with {
             $Type : 'Common.ValueListType',
             CollectionPath : 'Functions',
             Parameters : [
-                {
-                    $Type: 'Common.ValueListParameterConstant',
-                    Constant: '@NX:(type.code = "MT" or type.code = "AL")',
-                    // Constant : ![@NX.valuehelp:(type.code = 'MT' or type.code = 'AL')],
-                    ValueListProperty : 'type_code',
-                },
-                {
-                    $Type : 'Common.ValueListParameterIn',
-                    LocalDataProperty : environment_ID,
-                    ValueListProperty : 'environment_ID',
-                },
-                {
-                    $Type : 'Common.ValueListParameterIn',
-                    LocalDataProperty : valueHelpDummy,
-                    ValueListProperty : 'valueHelpDummy',
-                },
+                // {
+                //     $Type : 'Common.ValueListParameterIn',
+                //     LocalDataProperty : environment_ID,
+                //     ValueListProperty : 'environment_ID',
+                // },
                 {
                     $Type : 'Common.ValueListParameterInOut',
                     LocalDataProperty : inputFunction_ID,
@@ -1102,6 +1096,16 @@ annotate service.Allocations with {
                 {
                     $Type : 'Common.ValueListParameterDisplayOnly',
                     ValueListProperty : 'description',
+                },
+                // {
+                //     $Type : 'Common.ValueListParameterIn',
+                //     LocalDataProperty : validateDummy,
+                //     ValueListProperty : 'validateDummy',
+                // },
+                {
+                    $Type: 'Common.ValueListParameterConstant',
+                    Constant: 'Allocations.inputFunction',
+                    ValueListProperty : 'validateDummyField',
                 },
             ],
         },

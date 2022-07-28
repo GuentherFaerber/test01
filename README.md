@@ -57,14 +57,14 @@ This ticket consists of two parts
 #### Declarative Value Help filter
 
 In addition to the declarative ValueList annotation with its various parameters it should be possible to restrict the values of the value help with some indiviual filters declaratively.  
-The ValueList parameters are combined with **and** operators. This is not sufficient for many use cases. Hence another solution needs to be found. 
+The standard ValueList parameters are combined with **and** operators. This is not sufficient for many use cases. Hence another solution needs to be found. 
 
-In general it should be possible to achieve this with a selection variant that is applied to the 
+According to documentation this should in general be possible with a selection variant that is applied to the 
 value help dialog.
 
 ##### Evaluated standard solution
 
-This (currently) does not work (see this [SAP community question](https://answers.sap.com/questions/13666191/selectionvariant-to-filter-valuelist-in-fiori-elem.html) 
+The above mentioned standard solution (currently) does not work (see this [SAP community question](https://answers.sap.com/questions/13666191/selectionvariant-to-filter-valuelist-in-fiori-elem.html) 
 for details.
 
 In addition to the mentioned question it needs to be evaluated if and how it is possible to adjust the selection variant by means of declaration in the ValueList annotation.
@@ -109,7 +109,10 @@ define filters for all properties of the entity given in the collectionPath of t
 **Important note**  
 Although this is deprecated by CAP strings in the CXN expression have to be surrounded by `" (double quotes)` as you can see
 in the above example ("MT"). These double quotes are replaced by single quotes at runtime to avoid a CXN parse error.  
-This is necessarry cause the recommended way by using `![]` does not work for ValueListParameterConstant.
+This is necessary cause the recommended way by using `![]` does not work for ValueListParameterConstant.
+
+**Advantage**  
+To use this variant you only have to adjust your OData ValueList annotation in a CDS file. There is no virtual property necessary. 
 
 **Disadvantage**  
 With this solution it is not possible to filter the value list by dynamic values of the parents entity. That said you cannot
@@ -122,48 +125,46 @@ See function `handleNXValueListParameterConstantFilter` for the implementation.
 ###### Virtual properties solution
 
 **Note:**  
-This solution is not finally implemented yet. It currently shows an approach that is more flexible than [ValueListParameterConstant solution](#valuelistparameterconstant-solution) but comes
+This solution is more flexible than the [ValueListParameterConstant solution](#valuelistparameterconstant-solution) but comes
 with a higher implementation effort and an additional virtual property, resp. an aspect, and an additional @NX annotation. See the TODOs section for more details on open issues.
 
-The entities that are involved in the value help process need to have a virtual property **valueHelpDummy**. This can be added to such entities 
-by using the aspect **nxValuehelp**. 
-This aspect needs to be added to the value help entity as well as to the using entity (the entity that defines the property for which the value help should
-be used).
+One of the entities that are involved in the value help process need to have a virtual property **validateDummyField**. This can be added 
+by using the aspect **nxValidate**. 
+This aspect needs to be added to the value help entity. That is the entity which is used to show the value help.
 
-These properties are the glue between the using and the valuehelp entities. They are used in the ValueList annotation. In this annotaion you define a IN parameter that refers to 
-both entity properties (in the example and by default they have the same name).
+This property is the glue between the using and the valuehelp entities. It is used in the ValueList annotation. In this annotation you define a Common.ValueListParameterConstant parameter that refers to 
+the validateDummyField properties in the ValueListProperty and defines the entity and property is should be used for in the Constant parameter. The entity and property are
+separated by a dot (.).
 
 ```
-annotate service.Allocations with {
     inputFunction @(Common.ValueList : {
             $Type : 'Common.ValueListType',
             CollectionPath : 'Functions',
             Parameters : [
+                ...
                 {
-                    $Type : 'Common.ValueListParameterIn',
-                    LocalDataProperty : valueHelpDummy,
-                    ValueListProperty : 'valueHelpDummy',
+                    $Type: 'Common.ValueListParameterConstant',
+                    Constant: 'Allocations.inputFunction',
+                    ValueListProperty : 'validateDummyField',
                 },
-                {
-                    $Type : 'Common.ValueListParameterInOut',
-                    LocalDataProperty : inputFunction_ID,
-                    ...
+            ],
+        },
 ```
 
 The aspect is defined in [commonAspects.cds](./db/commonAspects.cds).
 
 ```
-aspect nxValuehelp: {
-  virtual valueHelpDummy : String;
+aspect nxValidate: {
+  virtual validateDummyField : String @title : ' '  
 }
 ```
 
 **Annotations** 
 
-The property that is supposed to display the value help and that already has the ValueList annotation additionally needs the annotaion **NX.valuehelp**.
+The property that is supposed to display the value help and that already has the ValueList annotation additionally needs the annotaion **NX.validate**.
 This annotation defines the additional query clauses leveraging the CXN expression language like shown in the example below.
 ```
-NX.valuehelp : ![(type.code = 'MT' or type.code = 'AL') and environment_ID = $self.environment_ID]
+NX.validate : ![(type.code = 'MT' or type.code = 'AL') and environment_ID = $self.environment_ID]
 ```
 You can use fields of the valuehelp entity that is defined in the collectionPath of the ValueList annotation to add additional filters.
 The values of these fields can be static ones (type.code = 'MT') or they can refer to properties of the using entity (environment_ID = $self.environment_ID). 
@@ -173,33 +174,31 @@ Those references are resolved at runtime. This gives a higher level of flexibili
 **TODOs**
 For a complete implementation of this solution the following topics have to be implemented. This is currently postponed cause this solution may be not further pursued.
 
-*Change valueHelpDummy property to array*
-
-The valueHelpDummy property of aspect `nxValuehelp` is currently defined as string. Hence it is only possible to define a valueHelp extension for one property. 
-To make it usable for an arbitrary amount of properties the type of this property should be changed to a map with the property name as key and the CXN expression as
-value.
-
-*Implement Draft Mode event handlers*
-Currently the evaluation of the dynamic parts of the CXN expression ($self...) is only implemented in the generic AFTER READ handler. Hence it does not work for
-new objects of if values of the object change at runtime.  
-To support this it should be sufficient to also implement it in teh Draft Mode event handlers (PATCH, NEW, EDIT, ...).
+*Invalidate Fiori Elements Cache*  
+The solution works very good, but after a value of the currently edited object that is referenced in a CXN expression of the NX.validate annotation has been changed by the user
+the next time a referring value help is opened the change is not applied to this value help. This is only the case if the value help has been opened before the referenced value 
+has been changed.  
+This problem occurs cause Fiori Elements caches the results of value help requests. After the cache is cleared or the query for the value help is altered by the user, e.g.
+by entering something in the search field, the changed value us applied.
 
 #### Declarative Validation 
 
-The validation part of ticket [FHC-570](https://nexontis.atlassian.net/browse/FHC-570) is implemented using an @NX.assert annotation.  
-We are using assertions cause this is the standard way in CAP for validation annotations. 
+The validation part of ticket [FHC-570](https://nexontis.atlassian.net/browse/FHC-570) is implemented using the same @NX.validate annotation as used for value helps.  
 
 This validation is implemented in the before-CREATE and before-UPDATE handler in [nexontis-annotations.js](./srv/modeling/nexontis-annotations.js).  
 To see implementation details have a look at the function `handleNXValidation`.
 
-To use this validation you simply add a **@NX.assert.validate** annotation to the property that should be validated.
+To use this validation you simply add a **@NX.validate** annotation to the property that should be validated.
 ```
-  @(NX.assert.validate : ![(type.code = 'MT' or type.code = 'AL') and ID <> $self.function_ID and environment_ID = $self.environment_ID])
+  @(NX.validate : ![(type.code = 'MT' or type.code = 'AL') and ID <> $self.function_ID and environment_ID = $self.environment_ID])
 ```
 After the colon you define a CXN expression that defines the validation rules. The validate function runs a SELECT on the association entity with
 this filter and checks if the value the user selected/entered for the (foreign-key) field is part of the result set. If not a validation error is thrown.
 As described in [Virtual property solution](#virtual-properties-solution) it is possible to use the **$self** keyword to replace the string by the current value 
 of the parents property at runtime.
+
+**Note**  
+The validation and the virtual property value help solution use the same annotation. Hence changing it will affect both.
 
 **TODOs (???)**  
 This solution currently only works for to-one associations. If other use cases that can't be handled by standard CAP validations are needed they

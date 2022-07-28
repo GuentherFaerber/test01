@@ -8,8 +8,7 @@ annotate service.Functions with @(UI.LineItem : [
         $Type : 'UI.DataField',
         Value : function,
     },
-        */
-
+    */
     {
         $Type : 'UI.DataFieldWithUrl',
         Value : function,
