@@ -1079,11 +1079,6 @@ annotate service.Allocations with {
             $Type : 'Common.ValueListType',
             CollectionPath : 'Functions',
             Parameters : [
-                // {
-                //     $Type : 'Common.ValueListParameterIn',
-                //     LocalDataProperty : environment_ID,
-                //     ValueListProperty : 'environment_ID',
-                // },
                 {
                     $Type : 'Common.ValueListParameterInOut',
                     LocalDataProperty : inputFunction_ID,
@@ -1097,11 +1092,6 @@ annotate service.Allocations with {
                     $Type : 'Common.ValueListParameterDisplayOnly',
                     ValueListProperty : 'description',
                 },
-                // {
-                //     $Type : 'Common.ValueListParameterIn',
-                //     LocalDataProperty : validateDummy,
-                //     ValueListProperty : 'validateDummy',
-                // },
                 {
                     $Type: 'Common.ValueListParameterConstant',
                     Constant: 'Allocations.inputFunction',
